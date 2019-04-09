@@ -113,13 +113,13 @@ It needs to read the memory address that's stored in register `PC`, and store
 that result in `IR`, the _Instruction Register_. This can just be a local
 variable in `cpu_run()`.
 
-Some instructions requires up to the next two bytes of data _after_ the `PC` in
+Some instructions require up to the next two bytes of data _after_ the `PC` in
 memory to perform operations on. Sometimes the byte value is a register number,
 other times it's a constant value (in the case of `LDI`). Using
 `cpu_ram_read()`, read the bytes at `PC+1` and `PC+2` from RAM into variables
 `operandA` and `operandB` in case the instruction needs them.
 
-Then, depending on the value of the opcode, perform the actions needed for the
+Then, depending on the value of the opcode (instruction), perform the actions needed for the
 instruction per the LS-8 spec. Maybe a `switch` statement...? Plenty of options.
 
 After the handler returns, the `PC` needs to be updated to point to the next

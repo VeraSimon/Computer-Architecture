@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "cpu.h"
 
 #define DATA_LEN 6
@@ -64,17 +66,38 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
  */
 void cpu_run(struct cpu *cpu)
 {
-    int running = 1; // True until we get a HLT instruction
+    // `IR`, the _Instruction Register_
+    unsigned int IR;
 
+    int running = 1; // True until we get a HLT instruction
     while (running)
     {
         // TODO
         // 1. Get the value of the current instruction (in address PC).
+        IR = cpu->PC;
+
         // 2. Figure out how many operands this next instruction requires
+
         // 3. Get the appropriate value(s) of the operands following this instruction
+        // * operandA
+        // * operandB
+
         // 4. switch() over it to decide on a course of action.
         // 5. Do whatever the instruction should do according to the spec.
         // 6. Move the PC to the next instruction.
+        switch (IR)
+        {
+        case HLT:
+            running = 0;
+            break;
+        case LDI:
+            break;
+        case PRN:
+            break;
+        default:
+            fprintf(stderr, "ERROR: Invalid instruction %p!\n", IR);
+            exit(-1);
+        }
     }
 }
 
@@ -88,7 +111,7 @@ void cpu_init(struct cpu *cpu)
     // void *memset(void *ptr, int x, size_t n);
     // ptr ==> Starting address of memory to be filled
     // x   ==> Value to be filled
-    // n   ==> Number of bytes to be filled starting from ptr to be filled
+    // n   ==> Number of bytes to be filled starting from ptr
 
     cpu->PC = 0;
     memset(cpu->registers, 0, sizeof(char) * 8);
