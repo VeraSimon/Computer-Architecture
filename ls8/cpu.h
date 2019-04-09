@@ -8,7 +8,7 @@
 struct cpu
 {
     // PC
-    unsigned int *PC;
+    unsigned char *PC;
 
     // registers (array)
     // * R5 is reserved as the interrupt mask (IM)
@@ -18,6 +18,9 @@ struct cpu
 
     // ram (array)
     unsigned char ram[MAX_RAM];
+
+    // TODO: something from the spec in the CPU
+    // FL;
 };
 
 // ALU operations
@@ -39,7 +42,7 @@ enum alu_op
 
 // Function declarations
 
-extern void cpu_load(struct cpu *cpu);
+extern void cpu_load(struct cpu *cpu, char *ls8_file);
 extern void cpu_init(struct cpu *cpu);
 extern void cpu_run(struct cpu *cpu);
 
