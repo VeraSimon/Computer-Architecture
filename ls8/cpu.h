@@ -6,8 +6,13 @@ struct cpu
 {
     // PC
     unsigned int PC;
+
     // registers (array)
+    // * R5 is reserved as the interrupt mask (IM)
+    // * R6 is reserved as the interrupt status (IS)
+    // * R7 is reserved as the stack pointer (SP)
     unsigned char registers[8];
+
     // ram (array)
     unsigned char ram[256];
 };
