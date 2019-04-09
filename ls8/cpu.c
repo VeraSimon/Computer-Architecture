@@ -4,21 +4,27 @@
 
 #define DATA_LEN 6
 
-/** --> Northbridge goes here <--
- * TODO: We'll make use of these helper functions later.
+/**
+ * --> Northbridge goes here <--
  */
-// cpu_ram_read()
-int *cpu_ram_read(struct cpu *cpu)
+int cpu_ram_read(struct cpu *cpu, int address)
 {
-    // return mem value or NULL?
-    return 0;
+    if (address >= 0 && address < MAX_RAM)
+    {
+        return cpu->ram[address];
+    }
+    else
+    {
+        return NULL;
+    }
 }
 
-// cpu_ram_write()
-int *cpu_ram_write(struct cpu *cpu)
+void cpu_ram_write(struct cpu *cpu, int address, int value)
 {
-    // return 0 (success), -1 (general failure), or further negative numbers (specific failures)?
-    return 0;
+    if (address >= 0 && address < MAX_RAM)
+    {
+        cpu->ram[address] = value;
+    }
 }
 
 /**
@@ -40,6 +46,7 @@ void cpu_load(struct cpu *cpu)
 
     for (int i = 0; i < DATA_LEN; i++)
     {
+        // TODO: Find out if address++ increments before or after evaluation here
         cpu->ram[address++] = data[i];
     }
 
@@ -69,28 +76,53 @@ void cpu_run(struct cpu *cpu)
     // `IR`, the _Instruction Register_
     unsigned int IR;
 
+    unsigned int operandA;
+    unsigned int operandB;
+
     int running = 1; // True until we get a HLT instruction
     while (running)
     {
-        // TODO
+        // Debugging/testing
+        printf("Registers:\n[ ");
+        for (int i = 0; i < MAX_REGISTERS; i++)
+        {
+            printf("%d ", cpu->registers[i]);
+        }
+        printf("]\n");
+
         // 1. Get the value of the current instruction (in address PC).
-        IR = cpu->PC;
+        IR = *cpu->PC;
 
         // 2. Figure out how many operands this next instruction requires
+        int operands = IR & 0b000011;
 
         // 3. Get the appropriate value(s) of the operands following this instruction
-        // * operandA
-        // * operandB
+        switch (operands)
+        {
+        case 1:
+            operandA = cpu_ram_read(cpu, IR + 1);
+            break;
+        case 2:
+            operandA = cpu_ram_read(cpu, IR + 1);
+            operandB = cpu_ram_read(cpu, IR + 2);
+            break;
+        case 3:
+            // do something with PRN maybe?
+            break;
+        default:
+            // zero or unexpected value
+            break;
+        }
 
         // 4. switch() over it to decide on a course of action.
         // 5. Do whatever the instruction should do according to the spec.
-        // 6. Move the PC to the next instruction.
         switch (IR)
         {
         case HLT:
             running = 0;
             break;
         case LDI:
+            cpu->registers[operandA] = operandB;
             break;
         case PRN:
             break;
@@ -98,6 +130,9 @@ void cpu_run(struct cpu *cpu)
             fprintf(stderr, "ERROR: Invalid instruction %p!\n", IR);
             exit(-1);
         }
+
+        // 6. Move the PC to the next instruction.
+        cpu->PC = cpu->PC[operands + 1];
     }
 }
 
@@ -108,12 +143,7 @@ void cpu_init(struct cpu *cpu)
 {
     // TODO: Initialize the PC and other special registers
 
-    // void *memset(void *ptr, int x, size_t n);
-    // ptr ==> Starting address of memory to be filled
-    // x   ==> Value to be filled
-    // n   ==> Number of bytes to be filled starting from ptr
-
-    cpu->PC = 0;
+    cpu->PC = cpu->ram[0];
     memset(cpu->registers, 0, sizeof(char) * 8);
     memset(cpu->ram, 0, sizeof(char) * 256);
 }

@@ -1,20 +1,23 @@
 #ifndef _CPU_H_
 #define _CPU_H_
 
+#define MAX_REGISTERS 8
+#define MAX_RAM 256
+
 // Holds all information about the CPU
 struct cpu
 {
     // PC
-    unsigned int PC;
+    unsigned int *PC;
 
     // registers (array)
     // * R5 is reserved as the interrupt mask (IM)
     // * R6 is reserved as the interrupt status (IS)
     // * R7 is reserved as the stack pointer (SP)
-    unsigned char registers[8];
+    unsigned char registers[MAX_REGISTERS];
 
     // ram (array)
-    unsigned char ram[256];
+    unsigned char ram[MAX_RAM];
 };
 
 // ALU operations
