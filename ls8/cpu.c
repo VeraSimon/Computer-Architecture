@@ -6,11 +6,12 @@
 // #define DATA_LEN 6
 
 /**
+ * RAM read & write
  * --> Northbridge goes here <--
  */
-unsigned char *cpu_ram_read(struct cpu *cpu, unsigned int address)
+unsigned char *cpu_ram_read(struct cpu *cpu, int address)
 {
-    if (address >= 0 && address < MAX_RAM)
+    if (address < MAX_RAM)
     {
         return &cpu->ram[address];
     }
@@ -20,9 +21,9 @@ unsigned char *cpu_ram_read(struct cpu *cpu, unsigned int address)
     }
 }
 
-void cpu_ram_write(struct cpu *cpu, unsigned int address, unsigned char value)
+void cpu_ram_write(struct cpu *cpu, int address, unsigned char value)
 {
-    if (address >= 0 && address < MAX_RAM)
+    if (address < MAX_RAM)
     {
         cpu->ram[address] = value;
     }
@@ -53,10 +54,8 @@ void cpu_load(struct cpu *cpu, char *ls8_file)
     //     cpu->ram[address++] = data[i];
     // }
 
-    // Replace this with something less hard-coded
-
     // Arbitrary large number. Setting shorter than a line's length in file
-    // causes issues with expty indexes due to the strtoul conversion. Don't
+    // causes issues with zeroed indexes due to the strtoul conversion. Don't
     // set this to an instruction's length + 1.
     int instr_len = MAX_RAM;
 
@@ -76,8 +75,7 @@ void cpu_load(struct cpu *cpu, char *ls8_file)
     {
         char *endptr;
         unsigned char val = strtoul(line, &endptr, 2);
-        printf("address: %i\n", address);
-        cpu->ram[address++] = val;
+        cpu_ram_write(cpu, address++, val);
     }
 
     fclose(fp);
@@ -101,10 +99,11 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
 /**
  * Run the CPU
  */
-void cpu_run(struct cpu *cpu)
+void cpu_run(struct cpu *cpu, int debug)
 {
+    int cur_instr = 0;
     // Initialize PC
-    cpu->PC = cpu_ram_read(cpu, 0);
+    cpu->PC = cpu_ram_read(cpu, cur_instr);
 
     // `IR`, the _Instruction Register_
     unsigned char IR;
@@ -115,44 +114,50 @@ void cpu_run(struct cpu *cpu)
     int running = 1; // True until we get a HLT instruction
     while (running)
     {
-        // ~~ Debugging/testing ~~//
-        printf("Registers:\n[ ");
-        for (int i = 0; i < MAX_REGISTERS; i++)
+        // ~~ Debugging ~~//
+        if (debug)
         {
-            printf("%u ", cpu->registers[i]);
-        }
-        printf("]\n");
-        printf("RAM:\n[ ");
-        for (int i = 0; i < MAX_RAM; i++)
-        {
-            if (cpu->ram[i] != 0)
+            printf("Registers:\n[ ");
+            for (int i = 0; i < MAX_REGISTERS; i++)
             {
-                printf("%i:%u ", i, cpu->ram[i]);
+                printf("%u ", cpu->registers[i]);
             }
+            printf("]\n");
+            printf("RAM:\n[ ");
+            for (int i = 0; i < MAX_RAM; i++)
+            {
+                if (cpu->ram[i] != 0)
+                {
+                    printf("%i:%u ", i, cpu->ram[i]);
+                }
+            }
+            printf("]\n");
+            printf("PC: %u\n", *cpu->PC);
         }
-        printf("]\n");
-        printf("PC: %u\n\n", cpu->PC);
-        // ~~ End debugging/testing ~~//
+        // ~~ End debugging ~~//
 
         // 1. Get the value of the current instruction (in address PC).
         // strtoul(const char *str, char **endptr, int base)
-        // IR = *cpu->PC;
-        char *endptr;
-        IR = strtoul(cpu->PC, &endptr, 2);
+        IR = *cpu->PC;
+        // char *endptr;
+        // IR = strtoul(cpu->PC, &endptr, 2);
 
         // 2. Figure out how many operands this next instruction requires
-        int shifted;
         int operands = (IR >> 6) & 0b11;
+        if (debug)
+        {
+            printf("Operand count: %i\n\n", operands);
+        }
 
         // 3. Get the appropriate value(s) of the operands following this instruction
         switch (operands)
         {
         case 1:
-            operandA = *cpu_ram_read(cpu, IR + 1);
+            operandA = *cpu_ram_read(cpu, cur_instr + 1);
             break;
         case 2:
-            operandA = *cpu_ram_read(cpu, IR + 1);
-            operandB = *cpu_ram_read(cpu, IR + 2);
+            operandA = *cpu_ram_read(cpu, cur_instr + 1);
+            operandB = *cpu_ram_read(cpu, cur_instr + 2);
             break;
         case 3:
             // do something maybe? this is dependent on the last 2 digits, so 0, 1, 2, & 3 are all possibilities.
@@ -171,9 +176,11 @@ void cpu_run(struct cpu *cpu)
             break;
         case LDI:
             cpu->registers[operandA] = operandB;
+            cur_instr += 3;
             break;
         case PRN:
-            fprintf(stdout, "%i", cpu->registers[operandA]);
+            fprintf(stdout, "%i\n", cpu->registers[operandA]);
+            cur_instr += 2;
             break;
         default:
             fprintf(stderr, "ERROR: Invalid instruction %u!\n", IR);

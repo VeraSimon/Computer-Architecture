@@ -44,6 +44,6 @@ enum alu_op
 
 extern void cpu_load(struct cpu *cpu, char *ls8_file);
 extern void cpu_init(struct cpu *cpu);
-extern void cpu_run(struct cpu *cpu);
+extern void cpu_run(struct cpu *cpu, int debug);
 
 #endif
