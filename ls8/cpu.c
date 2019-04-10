@@ -3,11 +3,8 @@
 #include <string.h>
 #include "cpu.h"
 
-// #define DATA_LEN 6
-
 /**
  * RAM read & write
- * --> Northbridge goes here <--
  */
 unsigned char *cpu_ram_read(struct cpu *cpu, int address)
 {
@@ -34,26 +31,6 @@ void cpu_ram_write(struct cpu *cpu, int address, unsigned char value)
  */
 void cpu_load(struct cpu *cpu, char *ls8_file)
 {
-    // char data[DATA_LEN] = {
-    //     // From print8.ls8
-    //     0b10000010, // LDI R0,8
-    //     0b00000000,
-    //     0b00001000,
-    //     0b01000111, // PRN R0
-    //     0b00000000,
-    //     0b00000001 // HLT
-    // };
-
-    // int address = 0;
-
-    // for (int i = 0; i < DATA_LEN; i++)
-    // {
-    //     // Find out if address++ increments before or after evaluation here?
-    //     // "A post-increment operator is used to increment the value of variable
-    //     // after executing expression completely in which post increment is used."
-    //     cpu->ram[address++] = data[i];
-    // }
-
     // Arbitrary large number. Setting shorter than a line's length in file
     // causes issues with zeroed indexes due to the strtoul conversion. Don't
     // set this to an instruction's length + 1.
@@ -75,6 +52,16 @@ void cpu_load(struct cpu *cpu, char *ls8_file)
     {
         char *endptr;
         unsigned char val = strtoul(line, &endptr, 2);
+
+        // Skip those pesky single-line comments
+        if (line == endptr)
+        {
+            continue;
+        }
+
+        // Find out if address++ increments before or after evaluation here?
+        // "A post-increment operator is used to increment the value of variable
+        // after executing expression completely in which post increment is used."
         cpu_ram_write(cpu, address++, val);
     }
 
@@ -89,7 +76,7 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
     switch (op)
     {
     case ALU_MUL:
-        // TODO: ALU_MUL
+
         break;
 
         // TODO: implement more ALU ops
@@ -101,20 +88,20 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
  */
 void cpu_run(struct cpu *cpu, int debug)
 {
+    // Current instruction "address"
     int cur_instr = 0;
-    // Initialize PC
+    // Initialize Program Counter
     cpu->PC = cpu_ram_read(cpu, cur_instr);
-
-    // `IR`, the _Instruction Register_
+    // Instruction Register
     unsigned char IR;
 
+    // Operand storage per ls8/README.md step 4
     unsigned int operandA;
     unsigned int operandB;
 
     int running = 1; // True until we get a HLT instruction
     while (running)
     {
-        // ~~ Debugging ~~//
         if (debug)
         {
             printf("Registers:\n[ ");
@@ -132,38 +119,35 @@ void cpu_run(struct cpu *cpu, int debug)
                 }
             }
             printf("]\n");
-            printf("PC: %u\n", *cpu->PC);
+            printf("Program counter: %u\n", *cpu->PC);
         }
-        // ~~ End debugging ~~//
 
         // 1. Get the value of the current instruction (in address PC).
         // strtoul(const char *str, char **endptr, int base)
         IR = *cpu->PC;
-        // char *endptr;
-        // IR = strtoul(cpu->PC, &endptr, 2);
 
         // 2. Figure out how many operands this next instruction requires
-        int operands = (IR >> 6) & 0b11;
+        int operands = IR >> 6;
         if (debug)
         {
+            printf("Instruction register: %i\n", IR);
             printf("Operand count: %i\n\n", operands);
         }
 
         // 3. Get the appropriate value(s) of the operands following this instruction
         switch (operands)
         {
-        case 1:
+        case 1: // 0b0001
             operandA = *cpu_ram_read(cpu, cur_instr + 1);
             break;
-        case 2:
+        case 2: // 0b0010
             operandA = *cpu_ram_read(cpu, cur_instr + 1);
             operandB = *cpu_ram_read(cpu, cur_instr + 2);
             break;
-        case 3:
+        case 3: // 0b0011
             // do something maybe? this is dependent on the last 2 digits, so 0, 1, 2, & 3 are all possibilities.
             break;
-        default:
-            // zero or unexpected value
+        default: // 0b0000 or unexpected
             break;
         }
 
@@ -181,6 +165,10 @@ void cpu_run(struct cpu *cpu, int debug)
         case PRN:
             fprintf(stdout, "%i\n", cpu->registers[operandA]);
             cur_instr += 2;
+            break;
+        case MUL:
+            alu(cpu, ALU_MUL, operandA, operandB);
+            cur_instr += 3;
             break;
         default:
             fprintf(stderr, "ERROR: Invalid instruction %u!\n", IR);

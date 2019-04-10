@@ -7,7 +7,7 @@
  */
 int main(int argc, char **argv)
 {
-    if (argc < 2)
+    if (argc < 2 || argc > 3)
     {
         fprintf(stderr, "Invalid program call. Correct usage: ./ls8 file_name.ls8\n");
         return 1;
