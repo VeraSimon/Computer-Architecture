@@ -76,7 +76,7 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
     switch (op)
     {
     case ALU_MUL:
-
+        cpu->registers[regA] *= cpu->registers[regB];
         break;
 
         // TODO: implement more ALU ops
@@ -160,15 +160,15 @@ void cpu_run(struct cpu *cpu, int debug)
             break;
         case LDI:
             cpu->registers[operandA] = operandB;
-            cur_instr += 3;
+            cur_instr += operands + 1;
             break;
         case PRN:
             fprintf(stdout, "%i\n", cpu->registers[operandA]);
-            cur_instr += 2;
+            cur_instr += operands + 1;
             break;
         case MUL:
-            alu(cpu, ALU_MUL, operandA, operandB);
-            cur_instr += 3;
+            alu(cpu, MUL, operandA, operandB);
+            cur_instr += operands + 1;
             break;
         default:
             fprintf(stderr, "ERROR: Invalid instruction %u!\n", IR);

@@ -23,12 +23,6 @@ struct cpu
     // FL;
 };
 
-// ALU operations
-enum alu_op
-{
-    ALU_MUL
-};
-
 // ### Instructions ### //
 
 // These use binary literals. If these aren't available with your compiler, hex
@@ -40,7 +34,13 @@ enum alu_op
 #define PRN 0b01000111
 
 //# ALU #//
-#define MUL 10100010
+#define MUL 0b10100010
+
+// ALU operations
+enum alu_op
+{
+    ALU_MUL = MUL
+};
 
 // ### Function declarations ### //
 
