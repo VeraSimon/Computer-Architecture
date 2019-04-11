@@ -88,12 +88,6 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
  */
 void cpu_run(struct cpu *cpu, int debug)
 {
-    // TODO: Streamline by removing cur_instr and just get address value based on whatever address is currently in cpu->PC
-
-    // Current instruction "address"
-    int cur_instr = 0;
-    // Initialize Program Counter
-    cpu->PC = cpu_ram_read(cpu, cur_instr);
     // Instruction Register
     unsigned char IR;
 
@@ -121,12 +115,11 @@ void cpu_run(struct cpu *cpu, int debug)
                 }
             }
             printf("]\n");
-            printf("Program counter: %u\n", *cpu->PC);
+            printf("Program counter: %u\n", cpu->PC);
         }
 
         // 1. Get the value of the current instruction (in address PC).
-        // strtoul(const char *str, char **endptr, int base)
-        IR = *cpu->PC;
+        IR = *cpu_ram_read(cpu, cpu->PC);
 
         // 2. Figure out how many operands this next instruction requires
         int operands = IR >> 6;
@@ -141,15 +134,20 @@ void cpu_run(struct cpu *cpu, int debug)
         switch (operands)
         {
         case 1: // 0b0001
-            operandA = *cpu_ram_read(cpu, cur_instr + 1);
+            operandA = *cpu_ram_read(cpu, cpu->PC + 1);
             if (debug)
+            {
                 printf("Value of operandA: %u\n", operandA);
+            }
             break;
         case 2: // 0b0010
-            operandA = *cpu_ram_read(cpu, cur_instr + 1);
-            operandB = *cpu_ram_read(cpu, cur_instr + 2);
+            operandA = *cpu_ram_read(cpu, cpu->PC + 1);
+            operandB = *cpu_ram_read(cpu, cpu->PC + 2);
             if (debug)
-                printf("Value of operandA: %u\nValue of operandB: %u\n", operandA, operandB);
+            {
+                printf("Value of operandA: %u\n", operandA);
+                printf("Value of operandB: %u\n", operandB);
+            }
             break;
         case 3: // 0b0011
             // do something maybe? this is dependent on the last 2 digits, so 0, 1, 2, & 3 are all possibilities.
@@ -167,11 +165,9 @@ void cpu_run(struct cpu *cpu, int debug)
             break;
         case LDI:
             cpu->registers[operandA] = operandB;
-            cur_instr += operands + 1;
             break;
         case MUL:
             alu(cpu, MUL, operandA, operandB);
-            cur_instr += operands + 1;
             break;
         case POP:
             if (cpu->registers[SP] <= IVT - 1)
@@ -185,7 +181,6 @@ void cpu_run(struct cpu *cpu, int debug)
                 fprintf(stderr, "Stack underflow!");
                 exit(-1);
             }
-            cur_instr += operands + 1;
             break;
         case PRN:
             if (debug)
@@ -193,14 +188,12 @@ void cpu_run(struct cpu *cpu, int debug)
                 printf("Result: ");
             }
             fprintf(stdout, "%i\n", cpu->registers[operandA]);
-            cur_instr += operands + 1;
             break;
         case PUSH:
             // TODO: Check for a stack overflow
             cpu->registers[SP]--;
             int stack_p = cpu->registers[SP];
             cpu_ram_write(cpu, stack_p, cpu->registers[operandA]);
-            cur_instr += operands + 1;
             break;
         default:
             fprintf(stderr, "ERROR: Invalid instruction %u!\n", IR);
@@ -208,7 +201,7 @@ void cpu_run(struct cpu *cpu, int debug)
         }
 
         // 6. Move the PC to the next instruction.
-        cpu->PC = &cpu->PC[operands + 1];
+        cpu->PC += operands + 1;
 
         if (debug)
         {

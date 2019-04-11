@@ -11,7 +11,7 @@
 struct cpu
 {
     // program counter
-    unsigned char *PC;
+    unsigned int PC;
 
     // registers
     // * R0-R4 are free for general use
