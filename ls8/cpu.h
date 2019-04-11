@@ -10,6 +10,9 @@
 // interrupt vector table start address
 #define IVT 0xF4
 
+// debugging flag
+int debug;
+
 // Holds all information about the CPU
 struct cpu
 {
@@ -70,6 +73,6 @@ enum alu_op
 
 extern void cpu_load(struct cpu *cpu, char *ls8_file);
 extern void cpu_init(struct cpu *cpu);
-extern void cpu_run(struct cpu *cpu, int debug);
+extern void cpu_run(struct cpu *cpu);
 
 #endif

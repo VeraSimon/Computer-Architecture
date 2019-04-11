@@ -31,16 +31,17 @@ void cpu_stack_push(struct cpu *cpu, int reg)
     // TODO: Check for a stack overflow
     cpu->registers[SP]--;
     int stack_p = cpu->registers[SP];
-    cpu_ram_write(cpu, stack_p, cpu->registers[reg]);
+    cpu_ram_write(cpu, stack_p, reg);
 }
 
-void cpu_stack_pop(struct cpu *cpu, int reg)
+unsigned char *cpu_stack_pop(struct cpu *cpu)
 {
     if (cpu->registers[SP] <= IVT - 1)
     {
         int stack_p = cpu->registers[SP];
-        cpu->registers[reg] = *cpu_ram_read(cpu, stack_p);
+        unsigned char *stack_val = cpu_ram_read(cpu, stack_p);
         cpu->registers[SP]++;
+        return stack_val;
     }
     else
     {
@@ -143,7 +144,7 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
 /**
  * Run the CPU
  */
-void cpu_run(struct cpu *cpu, int debug)
+void cpu_run(struct cpu *cpu)
 {
     // Operand storage per ls8/README.md step 4
     unsigned int operandA;
@@ -220,8 +221,8 @@ void cpu_run(struct cpu *cpu, int debug)
             break;
 
         case CALL:
-            // TODO: Implement CALL
-
+            cpu_stack_push(cpu, cpu->PC + operands + 1);
+            cpu->PC = cpu->registers[operandA];
             break;
 
         case DIV:
@@ -245,7 +246,7 @@ void cpu_run(struct cpu *cpu, int debug)
             break;
 
         case POP:
-            cpu_stack_pop(cpu, operandA);
+            cpu->registers[operandA] = *cpu_stack_pop(cpu);
             break;
 
         case PRN:
@@ -257,11 +258,11 @@ void cpu_run(struct cpu *cpu, int debug)
             break;
 
         case PUSH:
-            cpu_stack_push(cpu, operandA);
+            cpu_stack_push(cpu, cpu->registers[operandA]);
             break;
 
         case RET:
-            // TODO: Implement RET
+            cpu->PC = *cpu_stack_pop(cpu);
             break;
 
         case SUB:
@@ -274,7 +275,10 @@ void cpu_run(struct cpu *cpu, int debug)
         }
 
         // 6. Move the PC to the next instruction.
-        cpu->PC += operands + 1;
+        if (cpu->IR != RET)
+        {
+            cpu->PC += operands + 1;
+        }
 
         if (debug)
         {
@@ -288,9 +292,7 @@ void cpu_run(struct cpu *cpu, int debug)
  */
 void cpu_init(struct cpu *cpu)
 {
-    // TODO: Initialize the PC and other special registers
-
-    memset(cpu->registers, 0, sizeof(char) * 7);
+    memset(cpu->registers, 0, sizeof(char) * MAX_REGISTERS);
     cpu->registers[SP] = IVT;
     cpu->PC = 0;
     // cpu->FL = 0;
