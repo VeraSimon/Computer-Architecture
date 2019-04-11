@@ -88,9 +88,6 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
  */
 void cpu_run(struct cpu *cpu, int debug)
 {
-    // Instruction Register
-    unsigned char IR;
-
     // Operand storage per ls8/README.md step 4
     unsigned int operandA;
     unsigned int operandB;
@@ -119,13 +116,13 @@ void cpu_run(struct cpu *cpu, int debug)
         }
 
         // 1. Get the value of the current instruction (in address PC).
-        IR = *cpu_ram_read(cpu, cpu->PC);
+        cpu->IR = *cpu_ram_read(cpu, cpu->PC);
 
         // 2. Figure out how many operands this next instruction requires
-        int operands = IR >> 6;
+        int operands = cpu->IR >> 6;
         if (debug)
         {
-            printf("Instruction register: %i\n", IR);
+            printf("Instruction register: %i\n", cpu->IR);
             printf("Stack pointer: %u\n", cpu->registers[SP]);
             printf("Operand count: %i\n", operands);
         }
@@ -158,7 +155,7 @@ void cpu_run(struct cpu *cpu, int debug)
 
         // 4. switch() over it to decide on a course of action.
         // 5. Do whatever the instruction should do according to the spec.
-        switch (IR)
+        switch (cpu->IR)
         {
         case HLT:
             running = 0;
@@ -196,7 +193,7 @@ void cpu_run(struct cpu *cpu, int debug)
             cpu_ram_write(cpu, stack_p, cpu->registers[operandA]);
             break;
         default:
-            fprintf(stderr, "ERROR: Invalid instruction %u!\n", IR);
+            fprintf(stderr, "ERROR: Invalid instruction %u!\n", cpu->IR);
             exit(-1);
         }
 

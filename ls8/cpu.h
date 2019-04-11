@@ -13,6 +13,9 @@ struct cpu
     // program counter
     unsigned int PC;
 
+    // instruction register
+    unsigned char IR;
+
     // registers
     // * R0-R4 are free for general use
     // * R5 is reserved as the interrupt mask (IM)
