@@ -230,7 +230,8 @@ nice if your code eventually called the `alu()` function with appropriate
 arguments to get the work done.
 >
 
-
+<!-- TODO: Step 10
+-->
 ## Step 10: Beautify your `cpu_run()` loop, if needed
 
 Do you have a big `if-else-if` block or `switch` block in your `cpu_run()`

@@ -1,22 +1,26 @@
 #ifndef _CPU_H_
 #define _CPU_H_
 
+// CPU macro constants
 #define MAX_REGISTERS 8
 #define MAX_RAM 256
+#define SP 7
+#define IVT 0xF4
 
 // Holds all information about the CPU
 struct cpu
 {
-    // PC
+    // program counter
     unsigned char *PC;
 
-    // registers (array)
+    // registers
+    // * R0-R4 are free for general use
     // * R5 is reserved as the interrupt mask (IM)
     // * R6 is reserved as the interrupt status (IS)
     // * R7 is reserved as the stack pointer (SP)
     unsigned char registers[MAX_REGISTERS];
 
-    // ram (array)
+    // ram
     unsigned char ram[MAX_RAM];
 
     // TODO: something from the spec in the CPU
@@ -28,10 +32,12 @@ struct cpu
 // These use binary literals. If these aren't available with your compiler, hex
 // literals should be used.
 
-//# Baseline #//
+//# Other #//
 #define HLT 0b00000001
 #define LDI 0b10000010
+#define POP 0b01000110
 #define PRN 0b01000111
+#define PUSH 0b01000101
 
 //# ALU #//
 #define MUL 0b10100010

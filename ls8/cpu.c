@@ -88,6 +88,8 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
  */
 void cpu_run(struct cpu *cpu, int debug)
 {
+    // TODO: Streamline by removing cur_instr and just get address value based on whatever address is currently in cpu->PC
+
     // Current instruction "address"
     int cur_instr = 0;
     // Initialize Program Counter
@@ -131,7 +133,8 @@ void cpu_run(struct cpu *cpu, int debug)
         if (debug)
         {
             printf("Instruction register: %i\n", IR);
-            printf("Operand count: %i\n\n", operands);
+            printf("Stack pointer: %u\n", cpu->registers[SP]);
+            printf("Operand count: %i\n", operands);
         }
 
         // 3. Get the appropriate value(s) of the operands following this instruction
@@ -139,10 +142,14 @@ void cpu_run(struct cpu *cpu, int debug)
         {
         case 1: // 0b0001
             operandA = *cpu_ram_read(cpu, cur_instr + 1);
+            if (debug)
+                printf("operandA: %u\n\n", operandA);
             break;
         case 2: // 0b0010
             operandA = *cpu_ram_read(cpu, cur_instr + 1);
             operandB = *cpu_ram_read(cpu, cur_instr + 2);
+            if (debug)
+                printf("operandA: %u\noperandB: %u\n\n", operandA, operandB);
             break;
         case 3: // 0b0011
             // do something maybe? this is dependent on the last 2 digits, so 0, 1, 2, & 3 are all possibilities.
@@ -162,12 +169,33 @@ void cpu_run(struct cpu *cpu, int debug)
             cpu->registers[operandA] = operandB;
             cur_instr += operands + 1;
             break;
+        case MUL:
+            alu(cpu, MUL, operandA, operandB);
+            cur_instr += operands + 1;
+            break;
+        case POP:
+            if (cpu->registers[SP] <= IVT - 1)
+            {
+                int stack_p = cpu->registers[SP];
+                cpu->registers[operandA] = *cpu_ram_read(cpu, stack_p);
+                cpu->registers[SP]++;
+            }
+            else
+            {
+                fprintf(stderr, "Stack underflow!");
+                exit(-1);
+            }
+            cur_instr += operands + 1;
+            break;
         case PRN:
             fprintf(stdout, "%i\n", cpu->registers[operandA]);
             cur_instr += operands + 1;
             break;
-        case MUL:
-            alu(cpu, MUL, operandA, operandB);
+        case PUSH:
+            // TODO: Check for a stack overflow
+            cpu->registers[SP]--;
+            int stack_p = cpu->registers[SP];
+            cpu_ram_write(cpu, stack_p, cpu->registers[operandA]);
             cur_instr += operands + 1;
             break;
         default:
@@ -188,8 +216,9 @@ void cpu_init(struct cpu *cpu)
     // TODO: Initialize the PC and other special registers
 
     memset(cpu->registers, 0, sizeof(char) * 7);
-    cpu->registers[7] = 0xF4;
+    // 0xF4 / 0b11110100 / 244, where the interrupt vector table begins
+    cpu->registers[SP] = IVT;
     cpu->PC = 0;
     // cpu->FL = 0;
-    memset(cpu->ram, 0, sizeof(char) * 256);
+    memset(cpu->ram, 0, sizeof(char) * MAX_RAM);
 }

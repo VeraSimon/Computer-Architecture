@@ -22,6 +22,6 @@ node asm source.asm
 * Numeric constants
 * Comments
 
-## TODO
+## TO DO
 
 * Port this to Python
