@@ -75,11 +75,45 @@ void alu(struct cpu *cpu, enum alu_op op, unsigned char regA, unsigned char regB
 {
     switch (op)
     {
+    case ALU_ADD:
+        cpu->registers[regA] += cpu->registers[regB];
+        break;
+
+    case ALU_DIV:
+        if (regB == 0)
+        {
+            fprintf(stderr, "ERROR: Can't divide by zero!\n");
+            exit(-1);
+        }
+        else
+        {
+            cpu->registers[regA] /= cpu->registers[regB];
+        }
+        break;
+
+    case ALU_MOD:
+        if (regB == 0)
+        {
+            fprintf(stderr, "ERROR: Can't divide by zero!\n");
+            exit(-1);
+        }
+        else
+        {
+            cpu->registers[regA] %= cpu->registers[regB];
+        }
+        break;
+
     case ALU_MUL:
         cpu->registers[regA] *= cpu->registers[regB];
         break;
 
-        // TODO: implement more ALU ops
+    case ALU_SUB:
+        cpu->registers[regA] -= cpu->registers[regB];
+        break;
+
+    default:
+        fprintf(stderr, "ERROR: Invalid instruction %u!\n", cpu->IR);
+        exit(-1);
     }
 }
 
@@ -112,6 +146,7 @@ void cpu_run(struct cpu *cpu, int debug)
                 }
             }
             printf("]\n");
+            printf("Stack pointer: %u\n", cpu->registers[SP]);
             printf("Program counter: %u\n", cpu->PC);
         }
 
@@ -120,10 +155,10 @@ void cpu_run(struct cpu *cpu, int debug)
 
         // 2. Figure out how many operands this next instruction requires
         int operands = cpu->IR >> 6;
+
         if (debug)
         {
             printf("Instruction register: %i\n", cpu->IR);
-            printf("Stack pointer: %u\n", cpu->registers[SP]);
             printf("Operand count: %i\n", operands);
         }
 
@@ -157,15 +192,34 @@ void cpu_run(struct cpu *cpu, int debug)
         // 5. Do whatever the instruction should do according to the spec.
         switch (cpu->IR)
         {
+        case ADD:
+            alu(cpu, ADD, operandA, operandB);
+            break;
+
+        case CALL:
+            // TODO: Implement CALL
+            break;
+
+        case DIV:
+            alu(cpu, DIV, operandA, operandB);
+            break;
+
         case HLT:
             running = 0;
             break;
+
         case LDI:
             cpu->registers[operandA] = operandB;
             break;
+
+        case MOD:
+            alu(cpu, MOD, operandA, operandB);
+            break;
+
         case MUL:
             alu(cpu, MUL, operandA, operandB);
             break;
+
         case POP:
             if (cpu->registers[SP] <= IVT - 1)
             {
@@ -179,6 +233,7 @@ void cpu_run(struct cpu *cpu, int debug)
                 exit(-1);
             }
             break;
+
         case PRN:
             if (debug)
             {
@@ -186,12 +241,22 @@ void cpu_run(struct cpu *cpu, int debug)
             }
             fprintf(stdout, "%i\n", cpu->registers[operandA]);
             break;
+
         case PUSH:
             // TODO: Check for a stack overflow
             cpu->registers[SP]--;
             int stack_p = cpu->registers[SP];
             cpu_ram_write(cpu, stack_p, cpu->registers[operandA]);
             break;
+
+        case RET:
+            // TODO: Implement RET
+            break;
+
+        case SUB:
+            alu(cpu, SUB, operandA, operandB);
+            break;
+
         default:
             fprintf(stderr, "ERROR: Invalid instruction %u!\n", cpu->IR);
             exit(-1);
@@ -215,7 +280,6 @@ void cpu_init(struct cpu *cpu)
     // TODO: Initialize the PC and other special registers
 
     memset(cpu->registers, 0, sizeof(char) * 7);
-    // 0xF4 / 0b11110100 / 244, where the interrupt vector table begins
     cpu->registers[SP] = IVT;
     cpu->PC = 0;
     // cpu->FL = 0;
