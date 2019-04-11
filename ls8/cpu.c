@@ -143,13 +143,13 @@ void cpu_run(struct cpu *cpu, int debug)
         case 1: // 0b0001
             operandA = *cpu_ram_read(cpu, cur_instr + 1);
             if (debug)
-                printf("operandA: %u\n\n", operandA);
+                printf("Value of operandA: %u\n", operandA);
             break;
         case 2: // 0b0010
             operandA = *cpu_ram_read(cpu, cur_instr + 1);
             operandB = *cpu_ram_read(cpu, cur_instr + 2);
             if (debug)
-                printf("operandA: %u\noperandB: %u\n\n", operandA, operandB);
+                printf("Value of operandA: %u\nValue of operandB: %u\n", operandA, operandB);
             break;
         case 3: // 0b0011
             // do something maybe? this is dependent on the last 2 digits, so 0, 1, 2, & 3 are all possibilities.
@@ -188,6 +188,10 @@ void cpu_run(struct cpu *cpu, int debug)
             cur_instr += operands + 1;
             break;
         case PRN:
+            if (debug)
+            {
+                printf("Result: ");
+            }
             fprintf(stdout, "%i\n", cpu->registers[operandA]);
             cur_instr += operands + 1;
             break;
@@ -205,6 +209,11 @@ void cpu_run(struct cpu *cpu, int debug)
 
         // 6. Move the PC to the next instruction.
         cpu->PC = &cpu->PC[operands + 1];
+
+        if (debug)
+        {
+            printf("\n");
+        }
     }
 }
 
