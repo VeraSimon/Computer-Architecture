@@ -26,6 +26,29 @@ void cpu_ram_write(struct cpu *cpu, int address, unsigned char value)
     }
 }
 
+void cpu_stack_push(struct cpu *cpu, int reg)
+{
+    // TODO: Check for a stack overflow
+    cpu->registers[SP]--;
+    int stack_p = cpu->registers[SP];
+    cpu_ram_write(cpu, stack_p, cpu->registers[reg]);
+}
+
+void cpu_stack_pop(struct cpu *cpu, int reg)
+{
+    if (cpu->registers[SP] <= IVT - 1)
+    {
+        int stack_p = cpu->registers[SP];
+        cpu->registers[reg] = *cpu_ram_read(cpu, stack_p);
+        cpu->registers[SP]++;
+    }
+    else
+    {
+        fprintf(stderr, "Stack underflow!");
+        exit(-1);
+    }
+}
+
 /**
  * Load the binary bytes from an .ls8 source file into a RAM array
  */
@@ -33,11 +56,11 @@ void cpu_load(struct cpu *cpu, char *ls8_file)
 {
     // Arbitrary large number. Setting shorter than a line's length in file
     // causes issues with zeroed indexes due to the strtoul conversion. Don't
-    // set this to an instruction's length + 1.
-    int instr_len = MAX_RAM;
+    // set this to an instruction's length (8) + 1.
+    int instr_buf = MAX_RAM;
 
     FILE *fp;
-    char line[instr_len];
+    char line[instr_buf];
     fp = fopen(ls8_file, "r");
 
     if (fp == NULL)
@@ -48,7 +71,7 @@ void cpu_load(struct cpu *cpu, char *ls8_file)
 
     int address = 0;
 
-    while (fgets(line, instr_len, fp) != NULL)
+    while (fgets(line, instr_buf, fp) != NULL)
     {
         char *endptr;
         unsigned char val = strtoul(line, &endptr, 2);
@@ -198,6 +221,7 @@ void cpu_run(struct cpu *cpu, int debug)
 
         case CALL:
             // TODO: Implement CALL
+
             break;
 
         case DIV:
@@ -221,17 +245,7 @@ void cpu_run(struct cpu *cpu, int debug)
             break;
 
         case POP:
-            if (cpu->registers[SP] <= IVT - 1)
-            {
-                int stack_p = cpu->registers[SP];
-                cpu->registers[operandA] = *cpu_ram_read(cpu, stack_p);
-                cpu->registers[SP]++;
-            }
-            else
-            {
-                fprintf(stderr, "Stack underflow!");
-                exit(-1);
-            }
+            cpu_stack_pop(cpu, operandA);
             break;
 
         case PRN:
@@ -243,10 +257,7 @@ void cpu_run(struct cpu *cpu, int debug)
             break;
 
         case PUSH:
-            // TODO: Check for a stack overflow
-            cpu->registers[SP]--;
-            int stack_p = cpu->registers[SP];
-            cpu_ram_write(cpu, stack_p, cpu->registers[operandA]);
+            cpu_stack_push(cpu, operandA);
             break;
 
         case RET:
