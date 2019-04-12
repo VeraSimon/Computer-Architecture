@@ -275,7 +275,7 @@ void cpu_run(struct cpu *cpu)
         }
 
         // 6. Move the PC to the next instruction.
-        if (cpu->IR != RET)
+        if (cpu->IR != CALL && cpu->IR != RET)
         {
             cpu->PC += operands + 1;
         }
