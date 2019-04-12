@@ -275,8 +275,13 @@ void cpu_run(struct cpu *cpu)
         }
 
         // 6. Move the PC to the next instruction.
-        if (cpu->IR != CALL && cpu->IR != RET)
+        switch (cpu->IR)
         {
+        case CALL:
+        case RET:
+            break;
+
+        default:
             cpu->PC += operands + 1;
         }
 

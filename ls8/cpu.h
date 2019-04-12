@@ -69,6 +69,13 @@ enum alu_op
     ALU_SUB = SUB
 };
 
+// PC mutator operations
+enum pmut
+{
+    pmut_call = CALL,
+    pmut_ret = RET
+};
+
 // ### Function declarations ### //
 
 extern void cpu_load(struct cpu *cpu, char *ls8_file);
